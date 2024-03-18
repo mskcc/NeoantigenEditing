@@ -250,14 +250,14 @@ if __name__ == "__main__":
             pep_ids = pepseq2pepid[pep_seq]
             for pep_id in pep_ids:
                 aln_data.append([pep_id, pep_seq, epitope_id, score])
-        if len(aln_data):
-            aln_data = pd.DataFrame(aln_data)
-            aln_data.columns = [
-                "Peptide_ID",
-                "Peptide",
-                "Epitope_ID",
-                "Alignment_score",
-            ]
-            aln_data.to_csv(
-                "iedb_alignments_" + patient + ".txt", sep="\t", index=False
-            )
+    if len(aln_data):
+        aln_data = pd.DataFrame(aln_data)
+        aln_data.columns = [
+            "Peptide_ID",
+            "Peptide",
+            "Epitope_ID",
+            "Alignment_score",
+        ]
+        aln_data.to_csv(
+            "iedb_alignments_" + patient + ".txt", sep="\t", index=False
+        )
