@@ -11,7 +11,7 @@ LABEL maintainer="Nikhil Kumar (kumarn1@mskcc.org)" \
       source.neoantigenEditing="https://github.com/mskcc/NeoantigenEditing" \
       source.credit_doi="https://doi.org/10.1038/s41586-022-04735-9"
 
-ENV NEOANTIGEN_EDITING_TAG 1.0.0
+ENV NEOANTIGEN_EDITING_TAG 1.0
 
 RUN apt-get update \
   && apt-get install -y python3 python3-pip git make build-essential ncbi-blast+ python3-pandas python3-matplotlib python3-scipy python3-numpy python3-biopython \
