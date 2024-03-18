@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from collections import defaultdict
 import numpy as np
+import argparse
 
 import pandas as pd
 from Bio import SeqIO
@@ -200,22 +201,25 @@ def load_epitopes(iedbfasta):
 
 if __name__ == "__main__":
 
-    '''
-    
+    """
+
     Aligns neoantigens peptides of all patients to IEDB
     Requirement: blastp installed and in the PATH
-    
+
     run as:
     python align_neoantigens_to_IEDB.py
-     
-    '''
 
-    dir = os.path.join("data")
-    patient_dir = os.path.join("data", "Patient_data")
-    iedb_file = os.path.join("data", "iedb.fasta")
+    """
 
-    if not os.path.exists(os.path.join("data", "IEDB_alignments")):
-        os.mkdir(os.path.join("data", "IEDB_alignments"))
+    parser = argparse.ArgumentParser(prog="align_neoantigens_to_IEDB")
+    parser.add_argument("--fasta", help="IEDB fasta file", required=True)
+    parser.add_argument("--input", help="patient_data file", required=True)
+
+    args = parser.parse_args()
+
+    iedb_file = args.fasta
+    patient_file = args.input
+
     # blosum62
 
     blosum62 = load_blosum62_mat()
@@ -224,33 +228,36 @@ if __name__ == "__main__":
     prepare_blastdb(iedb_file)
     epitopes = load_epitopes(iedb_file)
 
-    patientdirs = glob.glob(os.path.join(patient_dir, "*", "Primary"))
-    # file to extract neoantigen sequences for that patient
-    patientfiles = [glob.glob(os.path.join(pdir, "*.json"))[0] for pdir in patientdirs]
+    with open(patient_file) as f:
+        pjson = json.load(f)
+    patient = pjson["patient"]
+    neoantigens = pjson["neoantigens"]
+    peptides = set(
+        [("_".join(neo["id"].split("_")[:-1]), neo["sequence"]) for neo in neoantigens]
+    )
+    pepseq2pepid = defaultdict(set)
+    for pep_id, pep_seq in peptides:
+        pepseq2pepid[pep_seq].add(pep_id)
 
-    for pfile in patientfiles:
-        with open(pfile) as f:
-            pjson = json.load(f)
-        patient = pjson["patient"]
-        neoantigens = pjson["neoantigens"]
-        peptides = set([("_".join(neo["id"].split("_")[:-1]), neo["sequence"]) for neo in neoantigens])
-        pepseq2pepid = defaultdict(set)
-        for pep_id, pep_seq in peptides:
-            pepseq2pepid[pep_seq].add(pep_id)
-
-        seqlist = list(set([pep_seq for pep_id, pep_seq in peptides]))
-        alignments = run_blastp(seqlist, iedb_file, n=100)
-        scores = []
-        aln_data = []
-        for pep_seq in alignments:
-            for epitope_id in alignments[pep_seq]:
-                episeq = epitopes[epitope_id]
-                score = align_peptides(pep_seq, episeq, blosum62).score
-                pep_ids = pepseq2pepid[pep_seq]
-                for pep_id in pep_ids:
-                    aln_data.append([pep_id, pep_seq, epitope_id, score])
+    seqlist = list(set([pep_seq for pep_id, pep_seq in peptides]))
+    alignments = run_blastp(seqlist, iedb_file, n=100)
+    scores = []
+    aln_data = []
+    for pep_seq in alignments:
+        for epitope_id in alignments[pep_seq]:
+            episeq = epitopes[epitope_id]
+            score = align_peptides(pep_seq, episeq, blosum62).score
+            pep_ids = pepseq2pepid[pep_seq]
+            for pep_id in pep_ids:
+                aln_data.append([pep_id, pep_seq, epitope_id, score])
         if len(aln_data):
             aln_data = pd.DataFrame(aln_data)
-            aln_data.columns = ["Peptide_ID", "Peptide", "Epitope_ID", "Alignment_score"]
-            aln_data.to_csv(os.path.join("data", "IEDB_alignments", "iedb_alignments_" + patient + ".txt"), sep="\t",
-                            index=False)
+            aln_data.columns = [
+                "Peptide_ID",
+                "Peptide",
+                "Epitope_ID",
+                "Alignment_score",
+            ]
+            aln_data.to_csv(
+                "iedb_alignments_" + patient + ".txt", sep="\t", index=False
+            )
