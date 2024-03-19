@@ -293,6 +293,8 @@ if __name__ == "__main__":
     parser.add_argument("--alignment", help="neoantigen alignment file", required=True)
     parser.add_argument("--input", help="patient_data file", required=True)
 
+    args = parser.parse_args()
+
     alignment_file = args.alignment
     patient_file = args.input
 
