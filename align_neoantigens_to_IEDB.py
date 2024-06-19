@@ -258,6 +258,9 @@ if __name__ == "__main__":
             "Epitope_ID",
             "Alignment_score",
         ]
-        aln_data.to_csv(
-            "iedb_alignments_" + patient + ".txt", sep="\t", index=False
-        )
+    else:
+        aln_data = pd.DataFrame(columns=["Peptide_ID","Peptide","Epitope_ID","Alignment_score"])
+    aln_data.to_csv(
+        "iedb_alignments_" + patient + ".txt", sep="\t", index=False
+    )
+        
